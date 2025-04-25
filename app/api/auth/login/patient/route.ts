@@ -32,10 +32,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // Find patient by email
+    // Find patient by email (without isDeleted filter first)
     const patient = await Patient.findOne({ 
-      email: body.email,
-      isDeleted: false 
+      email: body.email
     }).select('+password').exec();
 
     // Check if patient exists
@@ -46,10 +45,24 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if patient is active
+    // Check if account is deleted
+    if (patient.isDeleted) {
+      return NextResponse.json(
+        { 
+          error: 'Account access denied',
+          message: 'This account has been deactivated. Please contact support for assistance.'
+        },
+        { status: 403 }
+      );
+    }
+
+    // Check if account is inactive
     if (!patient.isActive) {
       return NextResponse.json(
-        { error: 'Your account is inactive. Please contact support.' },
+        { 
+          error: 'Account access denied',
+          message: 'Your account is currently inactive. Please contact support to reactivate your account.'
+        },
         { status: 403 }
       );
     }
@@ -92,7 +105,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       message: 'Login successful',
-    //   patient: patientResponse,
       token
     });
 

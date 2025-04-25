@@ -19,10 +19,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // Find therapist by email
+    // Find therapist by email (without isDeleted filter first)
     const therapist = await Therapist.findOne({ 
-      email: body.email,
-      isDeleted: false 
+      email: body.email
     }).select('+password').exec();
 
     // Check if therapist exists
@@ -33,10 +32,24 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if therapist is active
+    // Check if account is deleted
+    if (therapist.isDeleted) {
+      return NextResponse.json(
+        { 
+          error: 'Account access denied',
+          message: 'This account has been deactivated. Please contact support for assistance.'
+        },
+        { status: 403 }
+      );
+    }
+
+    // Check if account is inactive
     if (!therapist.isActive) {
       return NextResponse.json(
-        { error: 'Your account is inactive. Please contact support.' },
+        { 
+          error: 'Account access denied',
+          message: 'Your account is currently inactive. Please contact support to reactivate your account.'
+        },
         { status: 403 }
       );
     }
